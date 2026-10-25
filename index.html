@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Jason Cardenas's IT Portfolio" />
+  <title>Jason Cardenas | IT Portfolio</title>
+
+  <style>
+    /* ================= AMBER & OBSIDIAN THEME ================= */
+    :root {
+      --bg: #0a0a0a; /* Deep Obsidian */
+      --surface: #161616; 
+      --text: #f5f5f5;
+      --muted: #a3a3a3;
+      --accent: #f59e0b; /* Warm Amber */
+      --accent-dim: rgba(245, 158, 11, 0.15);
+      --border: rgba(245, 158, 11, 0.3);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Canvas for Floating Dust Particles */
+    #dust-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: -1; pointer-events: none;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    
+    .wrap { width: min(1200px, calc(100% - 40px)); margin: auto; }
+    .wrap-narrow { width: min(1000px, calc(100% - 40px)); margin: auto; }
+
+    /* ================= SCROLL ANIMATIONS ================= */
+    .hidden-el { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+    .show-el { opacity: 1; transform: translateY(0); }
+
+    /* ================= HEADER ================= */
+    header {
+      position: fixed; width: 100%; top: 0; z-index: 10;
+      background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav { height: 75px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { font-weight: 900; font-size: 1.2rem; letter-spacing: 3px; color: #fff; }
+    .brand span { color: var(--accent); }
+    .navlinks { display: flex; gap: 30px; }
+    .navlinks a { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); transition: all 0.3s; }
+    .navlinks a:hover { color: var(--accent); text-shadow: 0 0 10px var(--accent); }
+
+    /* ================= HERO (SPLIT LAYOUT) ================= */
+    .hero { 
+      min-height: 100vh; display: grid; grid-template-columns: 1.2fr 0.8fr; 
+      gap: 60px; align-items: center; padding-top: 75px;
+    }
+    
+    .eyebrow { color: var(--accent); font-size: 0.85rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 15px; }
+    h1 { font-size: clamp(2.5rem, 5vw, 4.5rem); line-height: 1.1; margin-bottom: 20px; font-weight: 900; color: #fff; }
+    .hero p { color: var(--muted); font-size: 1.1rem; margin-bottom: 30px; }
+    
+    .actions { display: flex; gap: 15px; flex-wrap: wrap; }
+    .btn { display: inline-block; padding: 14px 28px; border-radius: 4px; font-size: 0.9rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; border: 1px solid var(--border); }
+    .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 0 15px var(--accent-dim); }
+    .btn.primary:hover { box-shadow: 0 0 30px var(--accent); transform: translateY(-3px); }
+    .btn.secondary { background: transparent; color: #fff; }
+    .btn.secondary:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-3px); }
+
+    /* ================= PRECISION RETICLE PFP ================= */
+    .reticle-container {
+      position: relative; width: 320px; height: 320px; margin: 0 auto;
+      display: flex; justify-content: center; align-items: center;
+    }
+
+    /* Outer glowing ring */
+    .reticle-ring-outer {
+      position: absolute; width: 100%; height: 100%;
+      border-radius: 50%; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-bottom-color: var(--accent);
+      animation: spin 10s linear infinite;
+    }
+
+    /* Inner dashed ring */
+    .reticle-ring-inner {
+      position: absolute; width: 85%; height: 85%;
+      border-radius: 50%; border: 2px dashed var(--accent);
+      animation: spin-reverse 15s linear infinite;
+      opacity: 0.6;
+    }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
+
+    /* Crosshairs */
+    .reticle-crosshair-h {
+      position: absolute; width: 110%; height: 2px; background: var(--border); z-index: 1;
+    }
+    .reticle-crosshair-v {
+      position: absolute; width: 2px; height: 110%; background: var(--border); z-index: 1;
+    }
+
+    /* The photo */
+    .reticle-photo {
+      position: relative; width: 240px; height: 240px;
+      border-radius: 50%; overflow: hidden; z-index: 2;
+      border: 4px solid var(--bg); box-shadow: 0 0 30px var(--accent-dim);
+    }
+
+    .reticle-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+    .reticle-photo:hover img { transform: scale(1.1); }
+
+    /* ================= TECH CARDS ================= */
+    section { padding: 100px 0; }
+    .section-head { margin-bottom: 50px; text-align: left; }
+    .section-head h2 { font-size: 2.5rem; color: #fff; text-transform: uppercase; font-weight: 900; }
+    .section-head p { color: var(--muted); margin-top: 10px; font-size: 1.1rem;}
+
+    .about-grid, .skills-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; }
+    .project-grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
+
+    .tech-card {
+      background: var(--surface); padding: 35px; border: 1px solid var(--border);
+      border-radius: 8px; transition: all 0.3s; position: relative;
+      border-left: 4px solid transparent;
+    }
+    
+    .tech-card:hover { border-left-color: var(--accent); transform: translateX(10px); background: #1f1f1f; }
+    .tech-card h3 { font-size: 1.2rem; margin-bottom: 12px; color: var(--accent); text-transform: uppercase;}
+    .tech-card p { color: var(--muted); font-size: 1.05rem;}
+    .tech-card ul { color: var(--muted); padding-left: 20px; margin-top: 10px; }
+    .tech-card li { margin-bottom: 8px; }
+    
+    .pillrow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .pill { background: var(--accent-dim); color: var(--accent); padding: 6px 14px; font-size: 0.8rem; font-weight: 700; border: 1px solid var(--border); border-radius: 4px; }
+
+    /* ================= HORIZONTAL SLIDER CERTIFICATES ================= */
+    .cert-section { position: relative; overflow: hidden; padding-bottom: 50px; }
+    
+    .cert-header {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 30px; flex-wrap: wrap; gap: 20px;
+    }
+    .cert-header .section-head { margin-bottom: 0; }
+    
+    .slider-buttons { display: flex; gap: 10px; }
+    .slider-btn {
+      width: 45px; height: 45px; border-radius: 4px;
+      background: var(--surface); border: 1px solid var(--border); 
+      color: var(--accent); font-size: 1.2rem; cursor: pointer;
+      display: grid; place-items: center; transition: all 0.3s;
+    }
+    .slider-btn:hover { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent-dim); }
+
+    .cert-track {
+      display: flex; gap: 30px; overflow-x: auto; scroll-snap-type: x mandatory;
+      scroll-behavior: smooth; padding: 10px 0; -ms-overflow-style: none; scrollbar-width: none;
+    }
+    .cert-track::-webkit-scrollbar { display: none; }
+
+    .cert-card {
+      flex: 0 0 320px; scroll-snap-align: start; background: var(--surface); 
+      border: 1px solid var(--border); border-radius: 8px; padding: 15px;
+      display: flex; flex-direction: column; gap: 15px; transition: all 0.3s;
+    }
+    .cert-card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+    .cert-card h3 { font-size: 0.95rem; color: var(--accent); text-align: center; letter-spacing: 1px; text-transform: uppercase; font-weight: 800; }
+    .cert-preview { width: 100%; height: 200px; object-fit: cover; object-position: top; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); }
+    
+    .cert-actions { display: flex; gap: 10px; margin-top: auto; }
+    .cert-actions a { flex: 1; text-align: center; font-size: 0.8rem; padding: 10px; font-weight: 800; text-transform: uppercase; background: transparent; border: 1px solid var(--border); color: var(--text); border-radius: 4px; transition: all 0.3s; }
+    .cert-actions a:hover { background: var(--accent); color: #000; }
+    .cert-actions a.download { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+    /* ================= RESUME & CONTACT ================= */
+    .resume-band { background: var(--surface); border: 1px solid var(--accent); border-radius: 8px; padding: 40px; display: flex; justify-content: space-between; align-items: center; gap: 30px; flex-wrap: wrap; box-shadow: inset 0 0 20px var(--accent-dim); }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+
+    /* ================= RESPONSIVE ================= */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; text-align: center; gap: 50px; padding-top: 120px; }
+      .hero .actions { justify-content: center; }
+      .about-grid, .skills-grid, .contact-grid { grid-template-columns: 1fr; }
+      .navlinks { display: none; }
+      .resume-band { flex-direction: column; text-align: center; }
+      .reticle-container { width: 260px; height: 260px; }
+      .reticle-photo { width: 190px; height: 190px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- DUST PARTICLES CANVAS -->
+  <canvas id="dust-canvas"></canvas>
+
+  <header>
+    <div class="wrap">
+      <nav>
+        <a class="brand" href="#home">JASON<span>.</span></a>
+        <div class="navlinks">
+          <a href="#about">About</a>
+          <a href="#skills">Skills</a>
+          <a href="#projects">Projects</a>
+          <a href="#profdev">Certificates</a>
+          <a href="#contact">Contact</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- SPLIT HERO -->
+    <div class="wrap hero" id="home">
+      <div class="hidden-el">
+        <div class="eyebrow">Information Technology Student</div>
+        <h1>Jason<br>Cardenas</h1>
+        <p>An Information Technology student who applies classroom learning to practical software and digital project tasks. Strengthening problem-solving, collaboration, and attention to detail through academic activities.</p>
+        <div class="actions">
+          <a class="btn primary" href="#projects">View My Projects</a>
+          <a class="btn secondary" href="#resume">Download Resume</a>
+        </div>
+      </div>
+      
+      <div class="hidden-el">
+        <!-- PRECISION RETICLE PFP -->
+        <div class="reticle-container">
+          <div class="reticle-crosshair-h"></div>
+          <div class="reticle-crosshair-v"></div>
+          <div class="reticle-ring-outer"></div>
+          <div class="reticle-ring-inner"></div>
+          
+          <div class="reticle-photo">
+            <!-- ENSURE HIS PHOTO IS NAMED jason.jpg -->
+            <img src="jason.jpg" alt="Jason Cardenas" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABOUT & EXPERIENCE -->
+    <section id="about">
+      <div class="wrap-narrow">
+        <div class="section-head hidden-el">
+          <div class="eyebrow">About Me</div>
+          <h2>Practical Experience.</h2>
+        </div>
+        <div class="about-grid">
+          <article class="tech-card hidden-el">
+            <h3>Education</h3>
+            <p><strong>NorthEastern College</strong><br>Bachelor of Science in Information Technology (BSIT)</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">Villasis, Santiago City, Isabela</p>
+          </article>
+          <article class="tech-card hidden-el">
+            <h3>Work Experience (OJT)</h3>
+            <p>Helped carry out routine office duties and basic computer-related assignments. Sorted, filed, and updated paper documents and electronic records. Prepared written materials and maintained files using Microsoft Office tools.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- SKILLS -->
+    <section id="skills">
+      <div class="wrap-narrow">
+        <div class="section-head hidden-el">
+          <div class="eyebrow">Activities & Strengths</div>
+          <h2>Skills</h2>
+        </div>
+        <div class="skills-grid">
+          <article class="tech-card hidden-el">
+            <h3>Technical Skills</h3>
+            <ul>
+              <li>Microsoft Office (Word, Excel, PowerPoint)</li>
+              <li>Basic Computer Troubleshooting</li>
+              <li>File and Document Management</li>
+              <li>Digital Project Tasks</li>
+            </ul>
+          </article>
+          <article class="tech-card hidden-el">
+            <h3>Soft Skills</h3>
+            <ul>
+              <li>Coordination & Communication</li>
+              <li>Organization & Time Management</li>
+              <li>Problem-Solving & Collaboration</li>
+              <li>Attention to Detail</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROJECTS -->
+    <section id="projects">
+      <div class="wrap-narrow">
+        <div class="section-head hidden-el">
+          <div class="eyebrow">Selected Work</div>
+          <h2>Projects</h2>
+        </div>
+        <div class="project-grid">
+          
+          <article class="tech-card hidden-el">
+            <h3>Klasik Grounds Cafe</h3>
+            <p>Developed an academic project based on a cafe concept, with a focus on presenting cafe information and organizing relevant business details. Structured project content to make cafe-related information clear and easy to navigate.</p>
+            <div class="pillrow">
+              <span class="pill">Academic Project</span>
+              <span class="pill">Information Design</span>
+              <span class="pill">Web Concept</span>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- HORIZONTAL CERTIFICATES SLIDER -->
+    <section id="profdev" class="cert-section">
+      <div class="wrap">
+        
+        <div class="cert-header hidden-el">
+          <div class="section-head">
+            <div class="eyebrow">Professional Development</div>
+            <h2>Certificates</h2>
+          </div>
+          <div class="slider-buttons">
+            <button class="slider-btn" id="cert-left">&#10094;</button>
+            <button class="slider-btn" id="cert-right">&#10095;</button>
+          </div>
+        </div>
+
+        <div class="cert-track" id="cert-track">
+          
+          <!-- NETACAD -->
+          <article class="cert-card">
+            <h3>NetAcad</h3>
+            <a href="netacad.jpg" target="_blank"><img class="cert-preview" src="netacad.jpg" alt="NetAcad" /></a>
+            <div class="cert-actions"><a href="netacad.jpg" target="_blank">View</a><a href="netacad.jpg" download="NetAcad.jpg" class="download">Save</a></div>
+          </article>
+
+          <!-- DICT -->
+          <article class="cert-card">
+            <h3>DICT</h3>
+            <a href="dict.jpg" target="_blank"><img class="cert-preview" src="dict.jpg" alt="DICT" /></a>
+            <div class="cert-actions"><a href="dict.jpg" target="_blank">View</a><a href="dict.jpg" download="DICT.jpg" class="download">Save</a></div>
+          </article>
+
+          <!-- TESDA -->
+          <article class="cert-card">
+            <h3>TESDA</h3>
+            <a href="tesda.jpg" target="_blank"><img class="cert-preview" src="tesda.jpg" alt="TESDA" /></a>
+            <div class="cert-actions"><a href="tesda.jpg" target="_blank">View</a><a href="tesda.jpg" download="TESDA.jpg" class="download">Save</a></div>
+          </article>
+
+          <!-- FREECODECAMP -->
+          <article class="cert-card">
+            <h3>freeCodeCamp</h3>
+            <a href="camp.jpg" target="_blank"><img class="cert-preview" src="camp.jpg" alt="freeCodeCamp" /></a>
+            <div class="cert-actions"><a href="camp.jpg" target="_blank">View</a><a href="camp.jpg" download="freeCodeCamp.jpg" class="download">Save</a></div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- RESUME DOWNLOAD -->
+    <section id="resume">
+      <div class="wrap-narrow">
+        <div class="resume-band hidden-el">
+          <div>
+            <h2>Download my resume</h2>
+            <p>My resume is available for viewing and download.</p>
+          </div>
+          <a class="btn primary" href="resume.pdf" download="Jason-Cardenas-Resume.pdf">Download Resume</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact">
+      <div class="wrap-narrow">
+        <div class="section-head hidden-el">
+          <div class="eyebrow">Contact</div>
+          <h2>Let's connect.</h2>
+        </div>
+        <div class="contact-grid">
+          <article class="tech-card hidden-el">
+            <h3>Contact Information</h3>
+            <p style="margin-top: 10px;">Email: <a href="mailto:cardenasjason21@gmail.com" style="color:var(--accent); font-weight: bold;">cardenasjason21@gmail.com</a></p>
+            <p style="margin-top: 10px;">Phone: <a href="tel:+639196646610" style="color:var(--accent); font-weight: bold;">0919 664 6610</a></p>
+            <p style="margin-top: 10px;">Location: Villasis, Santiago City, Isabela</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer style="text-align:center; padding: 40px 0; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.85rem;">
+    <div class="wrap">
+      <p>© 2026 Jason Cardenas. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- ================= JAVASCRIPT ================= -->
+  <script>
+    // 1. Scroll Reveal Animation
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) { entry.target.classList.add('show-el'); }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.hidden-el').forEach((el) => observer.observe(el));
+
+    // 2. Horizontal Certificate Slider Logic
+    const track = document.getElementById('cert-track');
+    const btnLeft = document.getElementById('cert-left');
+    const btnRight = document.getElementById('cert-right');
+
+    if (track && btnLeft && btnRight) {
+      const scrollAmount = 350; 
+      btnLeft.addEventListener('click', () => {
+        track.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+      });
+      btnRight.addEventListener('click', () => {
+        track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      });
+    }
+
+    // 3. FLOATING DUST PARTICLES BACKGROUND
+    const canvas = document.getElementById('dust-canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles = [];
+
+    class Dust {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedX = (Math.random() - 0.5) * 0.3; // Slow drift
+        this.speedY = (Math.random() - 0.5) * 0.3;
+        this.opacity = Math.random() * 0.5 + 0.1;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+
+        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        // Amber glow
+        ctx.fillStyle = `rgba(245, 158, 11, ${this.opacity})`;
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      let count = (canvas.width * canvas.height) / 10000;
+      for (let i = 0; i < count; i++) {
+        particles.push(new Dust());
+      }
+    }
+
+    function animateParticles() {
+      requestAnimationFrame(animateParticles);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+    }
+
+    initParticles();
+    animateParticles();
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initParticles();
+    });
+  </script>
+
+</body>
+</html>
